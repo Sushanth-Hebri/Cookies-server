@@ -24,33 +24,28 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
         console.error('MongoDB connection error:', error);
     });
 
-// Define a schema and model for the user data
-const DataSchema = new mongoose.Schema({
-    ipAddress: { type: String, required: true },
-    userAgent: { type: String, required: true },
-    currentUrl: { type: String, required: true },
-    referer: { type: String, required: true },
-    screen: {
-        width: { type: Number, required: true },
-        height: { type: Number, required: true },
-    },
-    connectionType: { type: String, required: true },
+// Define a schema and model for storing IP addresses
+const IpSchema = new mongoose.Schema({
+    ipAddress: { type: String, required: true, unique: true }, // Ensure IP addresses are unique
     timestamp: { type: Date, default: Date.now },
 });
 
-const DataModel = mongoose.model('UserData', DataSchema);
+const IpModel = mongoose.model('IpAddress', IpSchema);
 
-// Endpoint to receive data
-app.post('/api/store-data', async (req, res) => {
-    const { ipAddress, userAgent, currentUrl, referer, screen, connectionType, timestamp } = req.body;
+// Endpoint to receive IP address
+app.post('/api/store-ip', async (req, res) => {
+    const { ipAddress } = req.body;
 
-    const newData = new DataModel({ ipAddress, userAgent, currentUrl, referer, screen, connectionType, timestamp });
+    const newIp = new IpModel({ ipAddress });
     
     try {
-        await newData.save();
-        res.status(201).json({ message: 'Data saved successfully!' });
+        await newIp.save();
+        res.status(201).json({ message: 'IP address saved successfully!' });
     } catch (error) {
-        res.status(500).json({ message: 'Error saving data', error });
+        if (error.code === 11000) { // Handle duplicate IP address error
+            return res.status(409).json({ message: 'IP address already exists.' });
+        }
+        res.status(500).json({ message: 'Error saving IP address', error });
     }
 });
 
