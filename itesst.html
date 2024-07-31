@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Data Tracking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Data Tracking</h1>
+    <button id="trackUser">Track User Data</button>
+    <p id="result"></p>
+
+    <script>
+        // Function to collect and send user data
+        async function collectUserData() {
+            const currentUrl = window.location.href; // Get the current URL
+            const referer = document.referrer || "Direct visit"; // Get the referring URL
+            const userAgent = navigator.userAgent; // Get the user agent
+            const screenWidth = window.screen.width; // Get screen width
+            const screenHeight = window.screen.height; // Get screen height
+            const connectionType = navigator.connection ? navigator.connection.effectiveType : "unknown"; // Get connection type
+
+            // Fetch the user's IP address using ipify
+            let ipAddress;
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                ipAddress = data.ip;
+            } catch (error) {
+                console.error('Error fetching IP address:', error);
+                ipAddress = 'Unable to retrieve IP';
+            }
+
+            // Prepare data to send
+            const dataToSend = {
+                ipAddress: ipAddress,
+                userAgent: userAgent,
+                currentUrl: currentUrl,
+                referer: referer,
+                screen: {
+                    width: screenWidth,
+                    height: screenHeight,
+                },
+                connectionType: connectionType,
+                timestamp: new Date().toISOString(), // Capture the timestamp
+            };
+
+            // Send data to the server
+            try {
+                const serverResponse = await fetch('http://localhost:3000/api/store-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend),
+                });
+
+                const result = await serverResponse.json();
+                document.getElementById('result').innerText = result.message;
+            } catch (error) {
+                console.error('Error sending data to server:', error);
+                document.getElementById('result').innerText = 'Error sending data to server';
+            }
+        }
+
+        // Attach event listener to the button
+        document.getElementById('trackUser').addEventListener('click', collectUserData);
+    </script>
+</body>
+</html>
